@@ -1,70 +1,204 @@
-# Getting Started with Create React App
+# Student Course Registration System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React-based course registration system for AUCA (Adventist University of Central Africa) that allows students to select, register, and manage their courses for the semester.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 📚 **Course Selection** - Browse and select from available courses
+- 👥 **Group Management** - Choose from available groups with real-time availability
+- 💰 **Fee Calculation** - Automatic calculation of tuition fees and total costs
+- 📊 **Registration Overview** - View all registered courses in a comprehensive table
+- ❌ **Course Withdrawal** - Remove courses from registration
+- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
-### `npm start`
+## Screenshot
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The system displays:
+- Student information (Name, Registration Number, Faculty, Department)
+- Course selection form with dropdowns
+- Fees summary table with credit costs
+- Registered courses table with schedule details
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Technologies Used
 
-### `npm test`
+- **React** - Frontend framework
+- **CSS3** - Styling and responsive design
+- **JavaScript ES6+** - Modern JavaScript features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Installation
 
-### `npm run build`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/leopoldbonfils/Study-Portal.git
+   cd study-portal
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. **Start the development server**
+   ```bash
+   npm start
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+4. **Open your browser**
+   Navigate to `http://localhost:3000`
 
-### `npm run eject`
+## Project Structure
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+study-portal/
+├── public/
+├── src/
+│   ├── App.js          # Main application component
+│   ├── App.css         # Application styles
+│   └── index.js        # Entry point
+├── package.json
+└── README.md
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Usage
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Registering a Course
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. Select a course from the **Select course** dropdown
+2. The course code will automatically populate
+3. Choose a group from the **Group** dropdown
+4. Review the schedule details (Room, Day, Hour)
+5. Click the **Add a Course** button
+6. The course will appear in both the Fees Summary and Registered Courses tables
 
-## Learn More
+### Withdrawing a Course
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. Locate the course in the **Registered courses** table
+2. Click the **Withdraw** button in the Action column
+3. The course will be removed from your registration
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Viewing Fees
 
-### Code Splitting
+The **Fees summary** table displays:
+- Course code and name
+- Number of credits
+- Credit cost
+- Total amount per course
+- Registration fee
+- Grand total
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Available Courses
 
-### Analyzing the Bundle Size
+The system includes the following courses:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+| Course Code | Course Name | Credits |
+|------------|-------------|---------|
+| ENGL 8124 | Academic English Writing | 3 |
+| COSC 8312 | Introduction to Linux | 3 |
+| INSY 8322 | Web Technology and Internet | 4 |
+| INSY 8411 | Dot Net | 4 |
+| SENG 8323 | Software Modeling Design | 4 |
+| SENG 8415 | Best Programming Practice Design Patterns | 3 |
 
-### Making a Progressive Web App
+## Fee Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Credit Cost**: 21,407 RWF per credit
+- **Registration Fee**: 25,000 RWF
+- **Life Assurance Fee**: 0.00 RWF
+- **Graduation Fee**: 0.00 RWF
 
-### Advanced Configuration
+Total fees are calculated automatically based on registered courses.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Customization
 
-### Deployment
+### Adding New Courses
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Edit the `availableCourses` array in `App.js`:
 
-### `npm run build` fails to minify
+```javascript
+const availableCourses = [
+  {
+    name: 'Course Name',
+    code: 'DEPT 1234',
+    groups: ['A', 'B'],
+    schedules: {
+      'A': { room: 'G101', day: 'MONDAY', hour: '10', maxGpe: 60, current: 45 },
+      'B': { room: 'G102', day: 'TUESDAY', hour: '14', maxGpe: 60, current: 50 }
+    },
+    credits: 3,
+    creditCost: 21407
+  },
+  // Add more courses...
+];
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Modifying Student Information
+
+Update the student information in the header section of `App.js`:
+
+```javascript
+<div className="info-item">
+  <span className="info-label">Full name:</span>
+  <span className="info-value">Your Name</span>
+</div>
+```
+
+### Changing Styling
+
+Modify `App.css` to customize colors, fonts, and layout:
+
+```css
+.btn-primary {
+  background-color: #your-color;
+}
+```
+
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Known Issues
+
+- None at the moment
+
+## Future Enhancements
+
+- [ ] Backend integration with database
+- [ ] User authentication
+- [ ] Course search functionality
+- [ ] Export registration to PDF
+- [ ] Email confirmation of registration
+- [ ] Payment integration
+- [ ] Course prerequisites checking
+- [ ] Schedule conflict detection
+- [ ] Multiple semester support
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+
+**Developer**: Mugisha Leopold and Danny Bisubizo Jospin 
+**Email**: leopordBnfils@gmail.com  
+**University**: Adventist University of Central Africa (AUCA)
+
+## Acknowledgments
+
+- AUCA IT Department
+- React Community
+- All contributors
+
+---
+
+**Note**: This is a frontend-only application. For production use, integrate with a backend API for data persistence and security.
