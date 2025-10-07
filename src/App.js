@@ -137,8 +137,57 @@ function App() {
     setCourseDetails(null);
   };
 
+  const switchGroup = () => {
+    if (!selectedCourse || !selectedGroup || !courseDetails) {
+      alert('Please select a course and a new group to switch');
+      return;
+    }
+
+    // Check if course is registered
+    const registeredCourse = registeredCourses.find(
+      c => c.code === courseDetails.code
+    );
+
+    if (!registeredCourse) {
+      alert('This course is not registered yet. Please add it first.');
+      return;
+    }
+
+    // Check if trying to switch to the same group
+    if (registeredCourse.group === selectedGroup) {
+      alert('This is already the current group for this course');
+      return;
+    }
+
+    // Update the course with new group schedule
+    const schedule = courseDetails.schedules[selectedGroup];
+    const updatedCourses = registeredCourses.map(course => {
+      if (course.code === courseDetails.code) {
+        return {
+          ...course,
+          group: selectedGroup,
+          room: schedule.room,
+          day: schedule.day,
+          hour: schedule.hour
+        };
+      }
+      return course;
+    });
+
+    setRegisteredCourses(updatedCourses);
+    alert('Group switched successfully!');
+    
+    // Reset selection
+    setSelectedCourse('');
+    setSelectedCode('');
+    setSelectedGroup('');
+    setCourseDetails(null);
+  };
+
   const withdrawCourse = (code) => {
-    setRegisteredCourses(registeredCourses.filter(c => c.code !== code));
+    if (window.confirm('Are you sure you want to withdraw this course?')) {
+      setRegisteredCourses(registeredCourses.filter(c => c.code !== code));
+    }
   };
 
   const totalCredits = registeredCourses.reduce((sum, course) => sum + course.credits, 0);
@@ -208,7 +257,7 @@ function App() {
                   onChange={handleCourseChange}
                   className="form-select"
                 >
-                  <option value="">Choose a course...</option>
+                  <option value="">Choose a course</option>
                   {availableCourses.map((course, index) => (
                     <option key={index} value={course.name}>
                       {course.name}
@@ -235,7 +284,7 @@ function App() {
                   className="form-select"
                   disabled={!courseDetails}
                 >
-                  <option value="">Select group...</option>
+                  <option value="">Select group</option>
                   {courseDetails && courseDetails.groups.map((group, index) => (
                     <option key={index} value={group}>{group}</option>
                   ))}
@@ -298,6 +347,21 @@ function App() {
             <div className="button-group">
               <button className="btn btn-primary" onClick={addCourse}>
                 Add a Course
+              </button>
+              <button className="btn btn-success" onClick={switchGroup}>
+                Switch Group
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={() => {
+                  if (selectedCode) {
+                    withdrawCourse(selectedCode);
+                  } else {
+                    alert('Please select a course to withdraw');
+                  }
+                }}
+              >
+                Withdraw Course
               </button>
             </div>
           </div>
