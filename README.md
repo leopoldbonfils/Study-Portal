@@ -29,7 +29,7 @@ The system displays:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/study-portal.git
+   git clone https://github.com/leopoldbonfils/Study-Portal.git
    cd study-portal
    ```
 
@@ -189,8 +189,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-**Developer**: Mugisha Leopold  
-**Email**: your.email@example.com  
+**Developer**: Mugisha Leopold and Danny Bisubizo Jospin 
+**Email**: leopordBnfils@gmail.com  
 **University**: Adventist University of Central Africa (AUCA)
 
 ## Acknowledgments
