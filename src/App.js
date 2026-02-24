@@ -1,7 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+import LoginPage from './LoginPage';
 
+// ─────────────────────────────────────────────────────────
+// Auth helpers
+// ─────────────────────────────────────────────────────────
+function clearSession() {
+  ['accessToken', 'refreshToken', 'isStaff', 'userProfile'].forEach(k =>
+    localStorage.removeItem(k)
+  );
+}
+
+function restoreSession() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null; // expired
+    const raw     = localStorage.getItem('userProfile');
+    const profile = raw ? JSON.parse(raw) : {};
+    const isStaff = localStorage.getItem('isStaff') === 'true';
+    return { token, profile, isStaff };
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// App — entry point
+// ─────────────────────────────────────────────────────────
 function App() {
+  const [auth, setAuth]         = useState(null);   // { token, profile, isStaff }
+  const [checking, setChecking] = useState(true);   // first-load session check
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const session = restoreSession();
+    if (session) setAuth(session);
+    setChecking(false);
+  }, []);
+
+  const handleLoginSuccess = ({ accessToken, profile, isStaff }) => {
+    setAuth({ token: accessToken, profile, isStaff });
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setAuth(null);
+  };
+
+  // Splash while checking token
+  if (checking) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#000', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          width: 32, height: 32,
+          border: '3px solid #222',
+          borderTopColor: '#3b82f6',
+          borderRadius: '50%',
+          animation: 'spin .7s linear infinite',
+        }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
+
+  // Not logged in → show login page
+  if (!auth) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Logged in → show the registration page
+  return <RegistrationPage profile={auth.profile} onLogout={handleLogout} />;
+}
+
+export default App;
+
+
+// ─────────────────────────────────────────────────────────
+// RegistrationPage — your original App code, untouched.
+// Only change: student info is pulled from real login profile.
+// ─────────────────────────────────────────────────────────
+function RegistrationPage({ profile, onLogout }) {
   const [registeredCourses, setRegisteredCourses] = useState([]);
   
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -105,7 +188,6 @@ function App() {
       return;
     }
 
-    // Check if course already registered
     const alreadyRegistered = registeredCourses.find(
       c => c.code === courseDetails.code
     );
@@ -130,7 +212,6 @@ function App() {
 
     setRegisteredCourses([...registeredCourses, newCourse]);
     
-    // Reset selection
     setSelectedCourse('');
     setSelectedCode('');
     setSelectedGroup('');
@@ -143,7 +224,6 @@ function App() {
       return;
     }
 
-    // Check if course is registered
     const registeredCourse = registeredCourses.find(
       c => c.code === courseDetails.code
     );
@@ -153,13 +233,11 @@ function App() {
       return;
     }
 
-    // Check if trying to switch to the same group
     if (registeredCourse.group === selectedGroup) {
       alert('This is already the current group for this course');
       return;
     }
 
-    // Update the course with new group schedule
     const schedule = courseDetails.schedules[selectedGroup];
     const updatedCourses = registeredCourses.map(course => {
       if (course.code === courseDetails.code) {
@@ -177,7 +255,6 @@ function App() {
     setRegisteredCourses(updatedCourses);
     alert('Group switched successfully!');
     
-    // Reset selection
     setSelectedCourse('');
     setSelectedCode('');
     setSelectedGroup('');
@@ -190,48 +267,69 @@ function App() {
     }
   };
 
-  const totalCredits = registeredCourses.reduce((sum, course) => sum + course.credits, 0);
+  const totalCredits    = registeredCourses.reduce((sum, course) => sum + course.credits, 0);
   const totalCreditCost = registeredCourses.reduce((sum, course) => sum + course.amount, 0);
-  const regFee = 25000;
+  const regFee          = 25000;
   const lifeAssuranceFee = 0;
-  const graduationFee = 0;
-  const grandTotal = totalCreditCost + regFee + lifeAssuranceFee + graduationFee;
+  const graduationFee   = 0;
+  const grandTotal      = totalCreditCost + regFee + lifeAssuranceFee + graduationFee;
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-RW').format(amount);
-  };
+  const formatCurrency = (amount) => new Intl.NumberFormat('en-RW').format(amount);
 
   const getScheduleForGroup = () => {
-    if (courseDetails && selectedGroup) {
-      return courseDetails.schedules[selectedGroup];
-    }
+    if (courseDetails && selectedGroup) return courseDetails.schedules[selectedGroup];
     return null;
   };
 
   const schedule = getScheduleForGroup();
 
+  // Pull real values from profile; fall back gracefully
+  const fullName   = profile ? `${profile.Fname || ''} ${profile.Lname || ''}`.trim() : '—';
+  const regNr      = profile?.StudentId  || profile?.Id || '—';
+  const faculty    = profile?.Faculty     || profile?.Department || '—';
+  const department = profile?.Department  || '—';
+
   return (
     <div className="app-container">
       <div className="content-wrapper">
-        {/* Student Info Header */}
+
+        {/* ── logout button ── */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <button
+            onClick={onLogout}
+            style={{
+              background: '#1a1a1a',
+              border: '1px solid #333',
+              color: '#9ca3af',
+              borderRadius: 6,
+              padding: '7px 18px',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Student Info Header — real profile data */}
         <div className="header-card">
           <h1 className="page-title">Student Registration - Semester 2025/I</h1>
           <div className="student-info">
             <div className="info-item">
               <span className="info-label">Full name:</span>
-              <span className="info-value">Mugisha Leopold</span>
+              <span className="info-value">{fullName}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Reg. Nr.:</span>
-              <span className="info-value">26636</span>
+              <span className="info-value">{regNr}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Faculty:</span>
-              <span className="info-value">Information Technology</span>
+              <span className="info-value">{faculty}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Department:</span>
-              <span className="info-value">Software Engineering</span>
+              <span className="info-value">{department}</span>
             </div>
             <div className="info-item">
               <span className="info-label">Program:</span>
@@ -295,52 +393,23 @@ function App() {
             <div className="form-row">
               <div className="form-group">
                 <label>Room</label>
-                <input 
-                  type="text" 
-                  value={schedule?.room || ''} 
-                  readOnly 
-                  className="form-input"
-                />
+                <input type="text" value={schedule?.room || ''} readOnly className="form-input" />
               </div>
-
               <div className="form-group">
                 <label>Day</label>
-                <input 
-                  type="text" 
-                  value={schedule?.day || ''} 
-                  readOnly 
-                  className="form-input"
-                />
+                <input type="text" value={schedule?.day || ''} readOnly className="form-input" />
               </div>
-
               <div className="form-group">
                 <label>Hour</label>
-                <input 
-                  type="text" 
-                  value={schedule?.hour || ''} 
-                  readOnly 
-                  className="form-input"
-                />
+                <input type="text" value={schedule?.hour || ''} readOnly className="form-input" />
               </div>
-
               <div className="form-group">
                 <label>Max Gpe</label>
-                <input 
-                  type="text" 
-                  value={schedule?.maxGpe || ''} 
-                  readOnly 
-                  className="form-input"
-                />
+                <input type="text" value={schedule?.maxGpe || ''} readOnly className="form-input" />
               </div>
-
               <div className="form-group">
                 <label>Current</label>
-                <input 
-                  type="text" 
-                  value={schedule?.current || ''} 
-                  readOnly 
-                  className="form-input"
-                />
+                <input type="text" value={schedule?.current || ''} readOnly className="form-input" />
               </div>
             </div>
 
@@ -367,12 +436,11 @@ function App() {
           </div>
         </div>
 
-        {/* Fees Summary Section */}
+        {/* Fees Summary + Registered Courses */}
         {registeredCourses.length > 0 && (
           <>
             <div className="section-card">
               <h2 className="section-title">Fees summary</h2>
-              
               <div className="table-container">
                 <table className="data-table">
                   <thead>
@@ -413,10 +481,8 @@ function App() {
               </div>
             </div>
 
-            {/* Registered Courses Section */}
             <div className="section-card">
               <h2 className="section-title">Registered courses</h2>
-              
               <div className="table-container">
                 <table className="data-table">
                   <thead>
@@ -461,5 +527,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
