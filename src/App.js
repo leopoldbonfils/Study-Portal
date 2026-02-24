@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import LoginPage from './LoginPage';
 
+const API = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 // ─────────────────────────────────────────────────────────
 // Auth helpers
 // ─────────────────────────────────────────────────────────
@@ -16,7 +18,7 @@ function restoreSession() {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    if (payload.exp && Date.now() / 1000 > payload.exp) return null; // expired
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null;
     const raw     = localStorage.getItem('userProfile');
     const profile = raw ? JSON.parse(raw) : {};
     const isStaff = localStorage.getItem('isStaff') === 'true';
@@ -30,10 +32,9 @@ function restoreSession() {
 // App — entry point
 // ─────────────────────────────────────────────────────────
 function App() {
-  const [auth, setAuth]         = useState(null);   // { token, profile, isStaff }
-  const [checking, setChecking] = useState(true);   // first-load session check
+  const [auth, setAuth]         = useState(null);
+  const [checking, setChecking] = useState(true);
 
-  // Restore session from localStorage on mount
   useEffect(() => {
     const session = restoreSession();
     if (session) setAuth(session);
@@ -49,269 +50,203 @@ function App() {
     setAuth(null);
   };
 
-  // Splash while checking token
   if (checking) {
     return (
-      <div style={{
-        minHeight: '100vh', background: '#000', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          width: 32, height: 32,
-          border: '3px solid #222',
-          borderTopColor: '#3b82f6',
-          borderRadius: '50%',
-          animation: 'spin .7s linear infinite',
-        }} />
+      <div style={{ minHeight:'100vh', background:'#000', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ width:32, height:32, border:'3px solid #222', borderTopColor:'#3b82f6', borderRadius:'50%', animation:'spin .7s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
-  // Not logged in → show login page
-  if (!auth) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
-  }
+  if (!auth) return <LoginPage onLoginSuccess={handleLoginSuccess} />;
 
-  // Logged in → show the registration page
-  return <RegistrationPage profile={auth.profile} onLogout={handleLogout} />;
+  return <RegistrationPage token={auth.token} profile={auth.profile} onLogout={handleLogout} />;
 }
 
 export default App;
 
 
 // ─────────────────────────────────────────────────────────
-// RegistrationPage — your original App code, untouched.
-// Only change: student info is pulled from real login profile.
+// RegistrationPage — same UI, now connected to real backend
 // ─────────────────────────────────────────────────────────
-function RegistrationPage({ profile, onLogout }) {
-  const [registeredCourses, setRegisteredCourses] = useState([]);
-  
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedCode, setSelectedCode] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('');
-  const [courseDetails, setCourseDetails] = useState(null);
+function RegistrationPage({ token, profile, onLogout }) {
 
-  // Available courses to select from
-  const availableCourses = [
-    {
-      name: 'Academic English Writing',
-      code: 'ENGL 8124',
-      groups: ['A', 'B'],
-      schedules: {
-        'A': { room: '201', day: 'MONDAY', hour: '14', maxGpe: 60, current: 45 },
-        'B': { room: '202', day: 'TUESDAY', hour: '14', maxGpe: 60, current: 60 }
-      },
-      credits: 3,
-      creditCost: 21407
-    },
-    {
-      name: 'Introduction to Linux',
-      code: 'COSC 8312',
-      groups: ['A', 'B'],
-      schedules: {
-        'A': { room: 'G306', day: 'THURSDAY', hour: '10', maxGpe: 60, current: 52 },
-        'B': { room: 'G307', day: 'MONDAY', hour: '18', maxGpe: 60, current: 60 }
-      },
-      credits: 3,
-      creditCost: 21407
-    },
-    {
-      name: 'Web Technology and Internet',
-      code: 'INSY 8322',
-      groups: ['D', 'E'],
-      schedules: {
-        'D': { room: 'G203', day: 'TUESDAY', hour: '18', maxGpe: 60, current: 48 },
-        'E': { room: 'G204', day: 'WEDNESDAY', hour: '18', maxGpe: 60, current: 60 }
-      },
-      credits: 4,
-      creditCost: 21407
-    },
-    {
-      name: 'Dot Net',
-      code: 'INSY 8411',
-      groups: ['A', 'B'],
-      schedules: {
-        'A': { room: 'G205', day: 'THURSDAY', hour: '14', maxGpe: 60, current: 55 },
-        'B': { room: 'G206', day: 'FRIDAY', hour: '14', maxGpe: 60, current: 50 }
-      },
-      credits: 4,
-      creditCost: 21407
-    },
-    {
-      name: 'Software Modeling Design',
-      code: 'SENG 8323',
-      groups: ['C', 'D'],
-      schedules: {
-        'C': { room: 'G306', day: 'FRIDAY', hour: '10', maxGpe: 60, current: 42 },
-        'D': { room: 'G307', day: 'SATURDAY', hour: '08', maxGpe: 60, current: 38 }
-      },
-      credits: 4,
-      creditCost: 21407
-    },
-    {
-      name: 'Best Programming Practice Design Patterns',
-      code: 'SENG 8415',
-      groups: ['A', 'B'],
-      schedules: {
-        'A': { room: 'G201', day: 'TUESDAY', hour: '16', maxGpe: 60, current: 47 },
-        'B': { room: 'G202', day: 'WEDNESDAY', hour: '16', maxGpe: 60, current: 51 }
-      },
-      credits: 3,
-      creditCost: 21407
-    }
-  ];
+  // ── state ──
+  const [availableCourses,   setAvailableCourses]   = useState([]);
+  const [registeredCourses,  setRegisteredCourses]  = useState([]);
+  const [loadingCourses,     setLoadingCourses]     = useState(true);
+  const [selectedCourse,     setSelectedCourse]     = useState('');
+  const [selectedCode,       setSelectedCode]       = useState('');
+  const [selectedGroup,      setSelectedGroup]      = useState('');
+  const [courseDetails,      setCourseDetails]      = useState(null);
+  const [saving,             setSaving]             = useState(false);
+  const [flashMsg,           setFlashMsg]           = useState(null); // {type, text}
 
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // ── fetch all courses from backend on mount ──
+  useEffect(() => {
+    fetch(`${API}/courses`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setAvailableCourses(data);
+      })
+      .catch(() => showFlash('error', 'Failed to load courses. Check your connection.'))
+      .finally(() => setLoadingCourses(false));
+  // eslint-disable-next-line
+  }, []);
+
+  // ── fetch already-enrolled courses on mount ──
+  useEffect(() => {
+    fetch(`${API}/courses/my-courses`, { headers })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          // map backend shape → local shape so the table displays correctly
+          const mapped = data.map(c => ({
+            classId:    c.ClassId,
+            code:       c.CourseCode,
+            name:       c.ClassName,
+            group:      c.GroupName  || '—',
+            room:       '—',
+            day:        '—',
+            hour:       '—',
+            credits:    0,
+            creditCost: 0,
+            amount:     0,
+          }));
+          setRegisteredCourses(mapped);
+        }
+      })
+      .catch(() => {}); // silent — not critical
+  // eslint-disable-next-line
+  }, []);
+
+  const showFlash = (type, text) => {
+    setFlashMsg({ type, text });
+    setTimeout(() => setFlashMsg(null), 4000);
+  };
+
+  // ── course selector ──
   const handleCourseChange = (e) => {
-    const courseName = e.target.value;
-    setSelectedCourse(courseName);
-    
-    const course = availableCourses.find(c => c.name === courseName);
+    const classId = Number(e.target.value);
+    setSelectedCourse(classId || '');
+    const course = availableCourses.find(c => c.ClassId === classId);
     if (course) {
-      setSelectedCode(course.code);
-      setSelectedGroup('');
+      setSelectedCode(course.CourseCode || '');
       setCourseDetails(course);
+      setSelectedGroup('');
     } else {
+      setSelectedCode('');
+      setCourseDetails(null);
+      setSelectedGroup('');
+    }
+  };
+
+  const handleGroupChange = (e) => setSelectedGroup(e.target.value);
+
+  // ── Add a Course → saves to DB via backend ──
+  const addCourse = async () => {
+    if (!selectedCourse || !courseDetails) {
+      alert('Please select a course.');
+      return;
+    }
+
+    // check duplicate in local list
+    if (registeredCourses.find(c => c.classId === courseDetails.ClassId)) {
+      alert('This course is already registered.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res  = await fetch(`${API}/courses/register-course`, {
+        method:  'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ classId: courseDetails.ClassId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Registration failed.');
+        return;
+      }
+
+      // add to local registered list so table updates immediately
+      const newCourse = {
+        classId:    courseDetails.ClassId,
+        code:       courseDetails.CourseCode || '',
+        name:       courseDetails.ClassName  || '',
+        group:      selectedGroup || courseDetails.GroupName || '—',
+        room:       '—',
+        day:        '—',
+        hour:       '—',
+        credits:    0,
+        creditCost: 0,
+        amount:     0,
+      };
+      setRegisteredCourses(prev => [...prev, newCourse]);
+      showFlash('success', `"${courseDetails.ClassName}" registered! Group chat is now live in your app.`);
+
+      // reset selectors
+      setSelectedCourse('');
       setSelectedCode('');
       setSelectedGroup('');
       setCourseDetails(null);
+
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleGroupChange = (e) => {
-    setSelectedGroup(e.target.value);
-  };
-
-  const addCourse = () => {
-    if (!selectedCourse || !selectedGroup || !courseDetails) {
-      alert('Please select a course and group');
-      return;
-    }
-
-    const alreadyRegistered = registeredCourses.find(
-      c => c.code === courseDetails.code
-    );
-
-    if (alreadyRegistered) {
-      alert('This course is already registered');
-      return;
-    }
-
-    const schedule = courseDetails.schedules[selectedGroup];
-    const newCourse = {
-      code: courseDetails.code,
-      name: courseDetails.name,
-      credits: courseDetails.credits,
-      creditCost: courseDetails.creditCost,
-      amount: courseDetails.credits * courseDetails.creditCost,
-      group: selectedGroup,
-      room: schedule.room,
-      day: schedule.day,
-      hour: schedule.hour
-    };
-
-    setRegisteredCourses([...registeredCourses, newCourse]);
-    
-    setSelectedCourse('');
-    setSelectedCode('');
-    setSelectedGroup('');
-    setCourseDetails(null);
-  };
-
-  const switchGroup = () => {
-    if (!selectedCourse || !selectedGroup || !courseDetails) {
-      alert('Please select a course and a new group to switch');
-      return;
-    }
-
-    const registeredCourse = registeredCourses.find(
-      c => c.code === courseDetails.code
-    );
-
-    if (!registeredCourse) {
-      alert('This course is not registered yet. Please add it first.');
-      return;
-    }
-
-    if (registeredCourse.group === selectedGroup) {
-      alert('This is already the current group for this course');
-      return;
-    }
-
-    const schedule = courseDetails.schedules[selectedGroup];
-    const updatedCourses = registeredCourses.map(course => {
-      if (course.code === courseDetails.code) {
-        return {
-          ...course,
-          group: selectedGroup,
-          room: schedule.room,
-          day: schedule.day,
-          hour: schedule.hour
-        };
-      }
-      return course;
-    });
-
-    setRegisteredCourses(updatedCourses);
-    alert('Group switched successfully!');
-    
-    setSelectedCourse('');
-    setSelectedCode('');
-    setSelectedGroup('');
-    setCourseDetails(null);
-  };
-
-  const withdrawCourse = (code) => {
+  // ── Withdraw ──
+  const withdrawCourse = (classId) => {
     if (window.confirm('Are you sure you want to withdraw this course?')) {
-      setRegisteredCourses(registeredCourses.filter(c => c.code !== code));
+      setRegisteredCourses(prev => prev.filter(c => c.classId !== classId));
+      // Note: backend withdraw (leave room) can be wired here if needed
     }
   };
 
-  const totalCredits    = registeredCourses.reduce((sum, course) => sum + course.credits, 0);
-  const totalCreditCost = registeredCourses.reduce((sum, course) => sum + course.amount, 0);
+  // ── totals ──
+  const totalCredits    = registeredCourses.reduce((s, c) => s + c.credits, 0);
+  const totalCreditCost = registeredCourses.reduce((s, c) => s + c.amount,  0);
   const regFee          = 25000;
-  const lifeAssuranceFee = 0;
-  const graduationFee   = 0;
-  const grandTotal      = totalCreditCost + regFee + lifeAssuranceFee + graduationFee;
+  const grandTotal      = totalCreditCost + regFee;
+  const formatCurrency  = (n) => new Intl.NumberFormat('en-RW').format(n);
 
-  const formatCurrency = (amount) => new Intl.NumberFormat('en-RW').format(amount);
-
-  const getScheduleForGroup = () => {
-    if (courseDetails && selectedGroup) return courseDetails.schedules[selectedGroup];
-    return null;
-  };
-
-  const schedule = getScheduleForGroup();
-
-  // Pull real values from profile; fall back gracefully
+  // real profile values
   const fullName   = profile ? `${profile.Fname || ''} ${profile.Lname || ''}`.trim() : '—';
   const regNr      = profile?.StudentId  || profile?.Id || '—';
-  const faculty    = profile?.Faculty     || profile?.Department || '—';
-  const department = profile?.Department  || '—';
+  const faculty    = profile?.Faculty    || '—';
+  const department = profile?.Department || '—';
 
   return (
     <div className="app-container">
       <div className="content-wrapper">
 
-        {/* ── logout button ── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-          <button
-            onClick={onLogout}
-            style={{
-              background: '#1a1a1a',
-              border: '1px solid #333',
-              color: '#9ca3af',
-              borderRadius: 6,
-              padding: '7px 18px',
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
+        {/* logout */}
+        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:12 }}>
+          <button onClick={onLogout} style={{ background:'#1a1a1a', border:'1px solid #333', color:'#9ca3af', borderRadius:6, padding:'7px 18px', fontSize:13, cursor:'pointer' }}>
             Logout
           </button>
         </div>
 
-        {/* Student Info Header — real profile data */}
+        {/* flash message */}
+        {flashMsg && (
+          <div style={{
+            background: flashMsg.type === 'success' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+            border: `1px solid ${flashMsg.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            color: flashMsg.type === 'success' ? '#4ade80' : '#f87171',
+            borderRadius: 8, padding:'12px 16px', marginBottom:16, fontSize:13,
+          }}>
+            {flashMsg.text}
+          </div>
+        )}
+
+        {/* Student Info Header */}
         <div className="header-card">
           <h1 className="page-title">Student Registration - Semester 2025/I</h1>
           <div className="student-info">
@@ -342,98 +277,69 @@ function RegistrationPage({ profile, onLogout }) {
           </div>
         </div>
 
-        {/* Course Selection Section */}
+        {/* Course Selection */}
         <div className="section-card">
           <h2 className="section-title">Course</h2>
-          
-          <div className="course-selection">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Select course</label>
-                <select 
-                  value={selectedCourse} 
-                  onChange={handleCourseChange}
-                  className="form-select"
+
+          {loadingCourses ? (
+            <p style={{ color:'#9ca3af', fontSize:14 }}>Loading courses from server…</p>
+          ) : (
+            <div className="course-selection">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Select course</label>
+                  <select value={selectedCourse} onChange={handleCourseChange} className="form-select">
+                    <option value="">Choose a course</option>
+                    {availableCourses.map((course) => (
+                      <option key={course.ClassId} value={course.ClassId}>
+                        {course.ClassName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Code</label>
+                  <input type="text" value={selectedCode} readOnly className="form-input" />
+                </div>
+
+                <div className="form-group">
+                  <label>Group</label>
+                  <input type="text" value={courseDetails?.GroupName || ''} readOnly className="form-input" />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Semester</label>
+                  <input type="text" value={courseDetails?.Semester || ''} readOnly className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label>Academic Year</label>
+                  <input type="text" value={courseDetails?.AcademicYear || ''} readOnly className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <input type="text" value={courseDetails?.ClassStatus || ''} readOnly className="form-input" />
+                </div>
+              </div>
+
+              <div className="button-group">
+                <button className="btn btn-primary" onClick={addCourse} disabled={saving}>
+                  {saving ? 'Saving…' : 'Add a Course'}
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    if (selectedCourse) withdrawCourse(Number(selectedCourse));
+                    else alert('Please select a course to withdraw');
+                  }}
                 >
-                  <option value="">Choose a course</option>
-                  {availableCourses.map((course, index) => (
-                    <option key={index} value={course.name}>
-                      {course.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Code</label>
-                <input 
-                  type="text" 
-                  value={selectedCode} 
-                  readOnly 
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Group</label>
-                <select 
-                  value={selectedGroup} 
-                  onChange={handleGroupChange}
-                  className="form-select"
-                  disabled={!courseDetails}
-                >
-                  <option value="">Select group</option>
-                  {courseDetails && courseDetails.groups.map((group, index) => (
-                    <option key={index} value={group}>{group}</option>
-                  ))}
-                </select>
+                  Withdraw Course
+                </button>
               </div>
             </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Room</label>
-                <input type="text" value={schedule?.room || ''} readOnly className="form-input" />
-              </div>
-              <div className="form-group">
-                <label>Day</label>
-                <input type="text" value={schedule?.day || ''} readOnly className="form-input" />
-              </div>
-              <div className="form-group">
-                <label>Hour</label>
-                <input type="text" value={schedule?.hour || ''} readOnly className="form-input" />
-              </div>
-              <div className="form-group">
-                <label>Max Gpe</label>
-                <input type="text" value={schedule?.maxGpe || ''} readOnly className="form-input" />
-              </div>
-              <div className="form-group">
-                <label>Current</label>
-                <input type="text" value={schedule?.current || ''} readOnly className="form-input" />
-              </div>
-            </div>
-
-            <div className="button-group">
-              <button className="btn btn-primary" onClick={addCourse}>
-                Add a Course
-              </button>
-              <button className="btn btn-success" onClick={switchGroup}>
-                Switch Group
-              </button>
-              <button 
-                className="btn btn-danger" 
-                onClick={() => {
-                  if (selectedCode) {
-                    withdrawCourse(selectedCode);
-                  } else {
-                    alert('Please select a course to withdraw');
-                  }
-                }}
-              >
-                Withdraw Course
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Fees Summary + Registered Courses */}
@@ -453,8 +359,8 @@ function RegistrationPage({ profile, onLogout }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {registeredCourses.map((course, index) => (
-                      <tr key={index}>
+                    {registeredCourses.map((course, i) => (
+                      <tr key={i}>
                         <td>{course.code}</td>
                         <td>{course.name}</td>
                         <td>{course.credits}</td>
@@ -462,18 +368,9 @@ function RegistrationPage({ profile, onLogout }) {
                         <td>{formatCurrency(course.amount)}</td>
                       </tr>
                     ))}
-                    <tr className="totals-row">
-                      <td colSpan="2"></td>
-                      <td>{totalCredits}</td>
-                      <td>{formatCurrency(107035)}.00 RWF</td>
-                      <td>{formatCurrency(totalCreditCost)}.00 RWF</td>
-                    </tr>
                     <tr className="fees-row">
-                      <td colSpan="2">
-                        <span>Reg. Fee: {formatCurrency(regFee)}.00 RWF</span>
-                      </td>
-                      <td>Life Assurance Fee: {lifeAssuranceFee}.00 RWF</td>
-                      <td>Graduation Fee: {graduationFee}.00 RWF</td>
+                      <td colSpan="2">Reg. Fee: {formatCurrency(regFee)}.00 RWF</td>
+                      <td colSpan="2">Life Assurance Fee: 0.00 RWF</td>
                       <td className="grand-total">Total: {formatCurrency(grandTotal)}.00 RWF</td>
                     </tr>
                   </tbody>
@@ -489,29 +386,18 @@ function RegistrationPage({ profile, onLogout }) {
                     <tr>
                       <th>CODE</th>
                       <th>COURSE</th>
-                      <th>CREDITS</th>
                       <th>GROUP</th>
-                      <th>ROOM</th>
-                      <th>DAY</th>
-                      <th>HOUR</th>
                       <th>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {registeredCourses.map((course, index) => (
-                      <tr key={index}>
+                    {registeredCourses.map((course, i) => (
+                      <tr key={i}>
                         <td>{course.code}</td>
                         <td>{course.name}</td>
-                        <td>{course.credits}</td>
                         <td>{course.group}</td>
-                        <td>{course.room}</td>
-                        <td>{course.day}</td>
-                        <td>{course.hour}</td>
                         <td>
-                          <button 
-                            className="btn btn-danger btn-sm"
-                            onClick={() => withdrawCourse(course.code)}
-                          >
+                          <button className="btn btn-danger btn-sm" onClick={() => withdrawCourse(course.classId)}>
                             Withdraw
                           </button>
                         </td>
@@ -523,6 +409,7 @@ function RegistrationPage({ profile, onLogout }) {
             </div>
           </>
         )}
+
       </div>
     </div>
   );
